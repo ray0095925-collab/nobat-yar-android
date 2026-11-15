@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -25,10 +25,12 @@ jobs:
           gradle-version: '8.9'
       - name: Build installable debug APK
         run: gradle --no-daemon clean assembleDebug
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
         with:
-          name: nobat-yar-android-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
+          tag_name: android-build-${{ github.run_number }}
+          name: Android APK build ${{ github.run_number }}
+          files: app/build/outputs/apk/debug/app-debug.apk
+          fail_on_unmatched_files: true
+          generate_release_notes: false
+          token: ${{ secrets.GITHUB_TOKEN }}
