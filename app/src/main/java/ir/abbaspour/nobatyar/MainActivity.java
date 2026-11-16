@@ -1,157 +1,25 @@
 package ir.abbaspour.nobatyar;
-
-import android.app.Activity;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.os.Bundle;
-import android.view.Gravity;
-import android.view.View;
-import android.webkit.CookieManager;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import android.util.Base64;
-
-public final class MainActivity extends Activity {
-    private static final String APP_URL = "https://raymand.site/nobat-ranandegan/";
-    private static final String ADMIN_LOGIN_URL = "https://raymand.site/wp-login.php?redirect_to=https%3A%2F%2Fraymand.site%2Fnobat-ranandegan%2F";
-    private static final int GREEN = Color.rgb(16, 36, 31);
-    private static final int GOLD = Color.rgb(200, 148, 50);
-    private WebView webView;
-    private ProgressBar progress;
-    private Typeface persianFont;
-
-    @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
-        getWindow().setStatusBarColor(GREEN);
-        getWindow().setNavigationBarColor(GREEN);
-        getWindow().getDecorView().setSystemUiVisibility(0);
-        CookieManager.getInstance().setAcceptCookie(true);
-        persianFont = Typeface.createFromAsset(getAssets(), "fonts/iran-black.ttf");
-        buildScreen();
-        webView.loadUrl(APP_URL);
-    }
-
-    private void buildScreen() {
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(247, 245, 239));
-
-        LinearLayout bar = new LinearLayout(this);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(dp(12), dp(8), dp(12), dp(8));
-        bar.setBackgroundColor(GREEN);
-
-        ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.nobat_logo);
-        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        bar.addView(logo, new LinearLayout.LayoutParams(dp(42), dp(42)));
-
-        TextView title = new TextView(this);
-        title.setText("نوبت‌یار عباسپور");
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(16);
-        title.setTypeface(persianFont);
-        title.setPadding(dp(10), 0, dp(8), 0);
-        bar.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1));
-
-        Button driver = navButton("پنل راننده", false);
-        driver.setOnClickListener(v -> webView.loadUrl(APP_URL));
-        bar.addView(driver);
-
-        Button manager = navButton("ورود مدیر", true);
-        manager.setOnClickListener(v -> webView.loadUrl(ADMIN_LOGIN_URL));
-        LinearLayout.LayoutParams managerParams = new LinearLayout.LayoutParams(-2, dp(40));
-        managerParams.setMarginStart(dp(7));
-        bar.addView(manager, managerParams);
-        root.addView(bar, new LinearLayout.LayoutParams(-1, -2));
-
-        progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        progress.setIndeterminate(true);
-        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
-        root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
-
-        webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(247, 245, 239));
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        webView.getSettings().setDatabaseEnabled(true);
-        webView.getSettings().setAllowFileAccess(false);
-        webView.getSettings().setAllowContentAccess(false);
-        webView.getSettings().setSupportMultipleWindows(false);
-        webView.setWebChromeClient(new WebChromeClient());
-        webView.setWebViewClient(new WebViewClient() {
-            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String host = request.getUrl().getHost();
-                return host != null && !host.equalsIgnoreCase("raymand.site");
-            }
-            @Override public void onPageFinished(WebView view, String url) {
-                progress.setVisibility(View.GONE);
-                if (url.startsWith("https://raymand.site/")) injectBranding(view);
-            }
-        });
-        root.addView(webView, new LinearLayout.LayoutParams(-1, 0, 1));
-        setContentView(root);
-    }
-
-    private Button navButton(String text, boolean primary) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setTextSize(12);
-        b.setAllCaps(false);
-        b.setTypeface(persianFont);
-        b.setTextColor(primary ? GREEN : Color.WHITE);
-        GradientDrawable shape = new GradientDrawable();
-        shape.setColor(primary ? GOLD : Color.rgb(35, 64, 55));
-        shape.setCornerRadius(dp(12));
-        b.setBackground(shape);
-        b.setPadding(dp(10), 0, dp(10), 0);
-        b.setMinHeight(dp(40));
-        b.setMinimumHeight(dp(40));
-        return b;
-    }
-
-    private void injectBranding(WebView view) {
-        try {
-            String logo = base64("nobat-logo.png");
-            String iran = base64("fonts/iran-black.ttf");
-            String poster = base64("fonts/posters-italic.ttf");
-            String ethno = base64("fonts/ethnocentric.otf");
-            String css = "@font-face{font-family:ABPDIran;src:url(data:font/ttf;base64,"+iran+")}"
-                    + "@font-face{font-family:ABPDPoster;src:url(data:font/ttf;base64,"+poster+")}"
-                    + "@font-face{font-family:ABPDEthno;src:url(data:font/otf;base64,"+ethno+")}"
-                    + ".abpd-wrap,.abpd-wrap button,.abpd-wrap input,.abpd-wrap select,.abpd-wrap textarea{font-family:ABPDIran,Tahoma,sans-serif!important}"
-                    + ".abpd-wrap .abpd-logo{background:transparent url(data:image/png;base64,"+logo+") center/contain no-repeat!important;color:transparent!important}"
-                    + ".abpd-wrap .abpd-intro h1{font-family:ABPDIran,Tahoma,sans-serif!important}"
-                    + ".abpd-wrap .abpd-eyebrow{letter-spacing:.02em}"
-                    + "body{background:#f7f5ef!important}";
-            String js = "(function(){var s=document.getElementById('abpd-android-brand');if(!s){s=document.createElement('style');s.id='abpd-android-brand';document.head.appendChild(s);}s.textContent='"+css+"';})();";
-            view.evaluateJavascript(js, null);
-        } catch (Exception ignored) { }
-    }
-
-    private String base64(String asset) throws Exception {
-        try (InputStream in = getAssets().open(asset); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192]; int n;
-            while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
-            return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
-        }
-    }
-
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-
-    @Override public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
-    }
+import android.app.*;import android.os.*;import android.graphics.Color;import android.view.*;import android.widget.*;import android.content.*;import org.json.*;import java.net.*;import java.io.*;import java.nio.charset.StandardCharsets;import java.util.concurrent.*;
+public class MainActivity extends Activity{
+ String api="https://raymand.site/wp-json/abbaspor-dispatch/v1/",token="",auth=""; SharedPreferences sp; LinearLayout box; ExecutorService ex=Executors.newSingleThreadExecutor(); int green=Color.rgb(23,75,66),gold=Color.rgb(201,149,46);
+ public void onCreate(Bundle b){super.onCreate(b);sp=getSharedPreferences("nobat",0);token=sp.getString("token","");auth=sp.getString("auth","");if(!token.isEmpty())driver();else if(!auth.isEmpty())manager();else choose();}
+ TextView txt(String s,int z){TextView t=new TextView(this);t.setText(s);t.setTextSize(z);t.setTextColor(Color.rgb(24,51,47));t.setPadding(4,12,4,12);return t;}
+ void page(String title){LinearLayout r=new LinearLayout(this);r.setOrientation(1);r.setBackgroundColor(0xfff3f7f5);TextView h=txt("◆  نوبت‌یار عباسپور\n"+title,21);h.setTextColor(-1);h.setBackgroundColor(green);h.setPadding(20,24,20,24);r.addView(h);ScrollView s=new ScrollView(this);box=new LinearLayout(this);box.setPadding(20,16,20,30);box.setOrientation(1);s.addView(box);r.addView(s,new LinearLayout.LayoutParams(-1,0,1));setContentView(r);}
+ EditText input(String hint){EditText e=new EditText(this);e.setHint(hint);box.addView(e,new LinearLayout.LayoutParams(-1,-2));return e;}
+ void button(String label,Runnable a){Button b=new Button(this);b.setText(label);b.setTextColor(-1);b.setAllCaps(false);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(green));box.addView(b);b.setOnClickListener(v->a.run());}
+ void alert(String s){new AlertDialog.Builder(this).setMessage(s).setPositiveButton("باشه",null).show();}
+ JSONObject obj(String...v)throws Exception{JSONObject j=new JSONObject();for(int i=0;i<v.length;i+=2)j.put(v[i],v[i+1]);return j;}
+ JSONObject call(String path,String method,JSONObject data,String bearer)throws Exception{HttpURLConnection c=(HttpURLConnection)new URL(api+path).openConnection();c.setConnectTimeout(15000);c.setReadTimeout(20000);c.setRequestMethod(method);c.setRequestProperty("Accept","application/json");if(bearer!=null)c.setRequestProperty("Authorization",bearer.startsWith("Basic ")?bearer:"Bearer "+bearer);if(data!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json");try(OutputStream o=c.getOutputStream()){o.write(data.toString().getBytes(StandardCharsets.UTF_8));}}int n=c.getResponseCode();InputStream in=n<400?c.getInputStream():c.getErrorStream();ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] b=new byte[4096];int x;while((x=in.read(b))>0)out.write(b,0,x);JSONObject j=new JSONObject(out.toString("UTF-8"));if(n>=400)throw new Exception(j.optString("message","خطای سرور "+n));return j;}
+ interface Task{JSONObject go()throws Exception;}void run(Task t,java.util.function.Consumer<JSONObject> ok){ex.execute(()->{try{JSONObject j=t.go();runOnUiThread(()->ok.accept(j));}catch(Exception e){runOnUiThread(()->alert(e.getMessage()));}});}
+ void choose(){page("ورود به سامانه");box.addView(txt("نسخه مستقل اندروید",20));button("ورود راننده",()->driverLogin());button("ورود مدیر",()->managerLogin());}
+ void driverLogin(){page("ورود راننده");EditText p=input("شماره موبایل");EditText c=input("کد پیامک");button("ارسال کد تأیید",()->run(()->call("request-code","POST",obj("phone",p.getText().toString()),null),r->alert("کد ارسال شد؛ تا ۵ دقیقه اعتبار دارد.")));button("تأیید و ورود",()->run(()->call("verify","POST",obj("phone",p.getText().toString(),"code",c.getText().toString()),null),r->{token=r.optString("token");sp.edit().putString("token",token).apply();JSONObject u=r.optJSONObject("user");if(u!=null&&(u.optString("name").isEmpty()||u.optString("plate").isEmpty()))profile();else driver();}));}
+ void profile(){page("تکمیل مشخصات");EditText n=input("نام و نام خانوادگی"),p=input("شماره پلاک"),v=input("نوع خودرو");button("ثبت مشخصات",()->run(()->call("profile","POST",obj("name",n.getText().toString(),"plate",p.getText().toString(),"vehicle",v.getText().toString()),token),r->driver()));}
+ void driver(){page("پنل راننده");box.addView(txt("مأموریت‌های من",21));button("به‌روزرسانی",()->loadDriver());button("خروج",()->logout());loadDriver();}
+ void loadDriver(){run(()->call("assignments","GET",null,token),r->{JSONArray a=r.optJSONArray("assignments");if(a==null||a.length()==0){box.addView(txt("مأموریتی ثبت نشده است.",16));return;}for(int i=0;i<a.length();i++){JSONObject q=a.optJSONObject(i);String id=q.optString("id");box.addView(txt("مأموریت #"+id+"\nمقصد: "+q.optString("destination")+"\nزمان: "+q.optString("scheduled_at")+"\nفاکتور: "+q.optString("invoice_no")+"\nوضعیت: "+q.optString("status"),16));if(q.optString("status").equals("assigned")){button("تأیید مأموریت",()->run(()->call("assignments/"+id+"/confirm","POST",new JSONObject(),token),z->{alert("تأیید شد");driver();}));button("درخواست تغییر زمان",()->change(id));}}});}
+ void change(String id){LinearLayout l=new LinearLayout(this);l.setOrientation(1);EditText t=new EditText(this);t.setHint("زمان پیشنهادی (ISO)");EditText r=new EditText(this);r.setHint("دلیل درخواست");l.addView(t);l.addView(r);new AlertDialog.Builder(this).setTitle("تغییر زمان").setView(l).setNegativeButton("لغو",null).setPositiveButton("ارسال",(d,w)->run(()->call("assignments/"+id+"/change","POST",obj("requested_at",t.getText().toString(),"reason",r.getText().toString()),token),z->alert("درخواست ارسال شد"))).show();}
+ void managerLogin(){page("ورود مدیر");EditText u=input("نام کاربری وردپرس"),p=input("Application Password وردپرس");button("ورود مدیر",()->{String a="Basic "+android.util.Base64.encodeToString((u.getText()+":"+p.getText()).getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);run(()->call("drivers","GET",null,a),r->{auth=a;sp.edit().putString("auth",auth).apply();manager();});});box.addView(txt("برای ورود از Application Password وردپرس استفاده کن؛ رمز اصلی حساب را وارد نکن.",13));}
+ void manager(){page("پنل مدیریت");button("فهرست رانندگان",()->run(()->call("drivers","GET",null,auth),r->{JSONArray a=r.optJSONArray("drivers");StringBuilder s=new StringBuilder();if(a!=null)for(int i=0;i<a.length();i++){JSONObject d=a.optJSONObject(i);s.append(d.optString("id")+" | "+d.optString("name")+" | "+d.optString("phone")+" | "+d.optString("plate")+"\n");}alert(s.toString());}));button("افزودن فاکتور",()->invoice());button("ثبت مأموریت",()->assignment());button("درخواست‌های تغییر",()->run(()->call("changes","GET",null,auth),r->{JSONArray a=r.optJSONArray("requests");StringBuilder s=new StringBuilder();if(a!=null)for(int i=0;i<a.length();i++){JSONObject q=a.optJSONObject(i);s.append("#"+q.optString("id")+" "+q.optString("driver_name")+" "+q.optString("reason")+"\n");}alert(s.length()==0?"درخواستی نیست":s.toString());}));button("مشاهده مأموریت‌ها",()->run(()->call("assignments","GET",null,auth),r->{JSONArray a=r.optJSONArray("assignments");StringBuilder s=new StringBuilder();if(a!=null)for(int i=0;i<a.length();i++){JSONObject q=a.optJSONObject(i);s.append("#"+q.optString("id")+" "+q.optString("destination")+" "+q.optString("status")+"\n");}alert(s.toString());}));button("خروج",()->logout());}
+ void invoice(){EditText e=new EditText(this);e.setHint("شماره فاکتور");new AlertDialog.Builder(this).setTitle("افزودن فاکتور").setView(e).setNegativeButton("لغو",null).setPositiveButton("ثبت",(d,w)->run(()->call("invoices","POST",obj("invoice_no",e.getText().toString()),auth),r->alert("فاکتور ثبت شد"))).show();}
+ void assignment(){page("ثبت مأموریت");EditText id=input("شناسه راننده (از فهرست رانندگان)"),dest=input("مقصد"),time=input("زمان ISO مانند 2026-11-20T10:30:00"),mode=input("فاکتور: random / manual / none"),inv=input("شناسه فاکتور (برای manual)"),note=input("یادداشت");button("ثبت مأموریت",()->{try{JSONObject j=new JSONObject();j.put("driver_id",Integer.parseInt(id.getText().toString()));j.put("destination",dest.getText().toString());j.put("scheduled_at",time.getText().toString());j.put("invoice_mode",mode.getText().toString().isEmpty()?"random":mode.getText().toString());j.put("invoice_id",inv.getText().toString().isEmpty()?0:Integer.parseInt(inv.getText().toString()));j.put("note",note.getText().toString());run(()->call("assignments","POST",j,auth),r->alert("مأموریت ثبت شد"));}catch(Exception e){alert("شناسه راننده/فاکتور را بررسی کن");}});}
+ void logout(){sp.edit().clear().apply();token="";auth="";choose();}
 }
